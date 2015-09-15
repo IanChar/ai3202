@@ -20,8 +20,13 @@ find a path with the least obstacles (in terms of line of sight). This turned
 out to not always be the most efficient path. However, it was more efficient
 for world 2.
 
+### Results
+Results of my heuristic are shown below. In order to view correctly view original
+source of README. Otherwise, you can just run the program to get the same output.
+
 World 1:
-> --------------------Log----------------------
+--------------------Log----------------------
+
 (0, 0) with cost 0
 (0, 1) with cost 44
 (0, 2) with cost 76
@@ -48,7 +53,7 @@ x 0 0 0 0 0 0 0 0 0
 Squares explored: 59
 
 World 2:
-> --------------------Log----------------------
+--------------------Log----------------------
 (0, 0) with cost 0
 (0, 1) with cost 49
 (0, 2) with cost 81
