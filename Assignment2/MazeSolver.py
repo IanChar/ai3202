@@ -15,6 +15,7 @@ class MazeSolver(object):
             minNext = heap.pop()
             if minNext.getPosition() == end:
                 self.readSolution(minNext, world)
+                print "Squares explored: ", heap.getSquaresExplored()
                 return
             else:
                 self.addAdjacent(minNext, world, heuristic, heap)
@@ -38,20 +39,54 @@ class MazeSolver(object):
 
     def readSolution(self, lastNode, world):
         solutionWorld = [[j for j in i] for i in world]
-        print "---------------Log-----------------"
+        print "--------------------Log----------------------"
         def printAndPopulate(currNode, world):
+            fCost = 0
             if currNode.getParent() is not None:
-                printAndPopulate(currNode.getParent(), world)
+                fCost = printAndPopulate(currNode.getParent(), world)
             print currNode
+            # Calculate real cost
             currPosn = currNode.getPosition()
+            if currNode.getParent() is not None:
+                pPos = currNode.getParent().getPosition()
+                fCost += 10
+                if currPosn[0] != pPos[0] and currPosn[1] != pPos[1]:
+                    fCost += 4
+                if world[currPosn[1]][currPosn[0]] == '1':
+                    fCost += 10
+            # Fill in map position
             world[currPosn[1]][currPosn[0]] = 'x'
-        printAndPopulate(lastNode, solutionWorld)
-        print "---------------Maze-----------------"
+            return fCost
+        print ("Total cost without heuristic is: "
+            + str(printAndPopulate(lastNode, solutionWorld)))
+        print "-------------------Maze---------------------"
         for row in reversed(solutionWorld):
             print " ".join(row)
 
 def manhattanHeuristic(position, world):
     return (len(world[0]) - position[0] - 1) + (len(world) - position[1] - 1)
+
+def customHeuristic(position, world):
+    xLim = len(world[0]) - 1
+    yLim = len(world) - 1
+    end = (xLim, yLim)
+    curr = [position[0], position[1]]
+    score = 0
+    while xLim > curr[0] and yLim > curr[1]:
+        if xLim == curr[0]:
+            curr[1] += 10
+            score += 2
+        elif yLim == curr[1]:
+            curr[0] += 1
+            score += 2
+        else:
+            curr[0] += 1; curr[1] += 1
+            score += 3
+        if world[curr[1]][curr[0]] == '2':
+            score += 7
+        elif world[curr[1]][curr[0]] == '1':
+            score += 2
+    return score
 
 def readChoices():
     print "\n--------------------------------------------"
@@ -76,11 +111,11 @@ if __name__ == '__main__':
         elif userInput == '1':
             ms.solveMaze((0, 0), (9, 7), world1, manhattanHeuristic)
         elif userInput == '2':
-            print "2 shall be done"
+            ms.solveMaze((0, 0), (9, 7), world1, customHeuristic)
         elif userInput == '3':
-            print "3 shall be done"
+            ms.solveMaze((0, 0), (9, 7), world2, manhattanHeuristic)
         elif userInput == '4':
-            print "4 shall be done"
+            ms.solveMaze((0, 0), (9, 7), world2, customHeuristic)
         elif userInput == 't':
             print world1[2][2]
         else:

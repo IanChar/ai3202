@@ -9,6 +9,8 @@ class NodeHeap(object):
         self.openLookup = {}
         # Dict with (x, y) key and node value
         self.closedLookup = {}
+        # Amount of nodes that have ever been in openLookup
+        self.squaresExplored = 0
 
     # Will add a new node or update a previous node if the new node has a
     # smaller distance. Returns True if a change was made to the heap.
@@ -28,6 +30,7 @@ class NodeHeap(object):
         else:
             heapq.heappush(self.heapList, node)
             self.openLookup[nodePosn] = node
+            self.squaresExplored += 1
             return True
 
     def pop(self):
@@ -38,6 +41,9 @@ class NodeHeap(object):
 
     def isOpenEmpty(self):
         return len(self.openLookup) == 0
+
+    def getSquaresExplored(self):
+        return self.squaresExplored
 
     def __str__(self):
         heapHeader = "-------heap--------"
