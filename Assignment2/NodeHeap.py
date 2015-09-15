@@ -21,6 +21,7 @@ class NodeHeap(object):
             existing = self.openLookup[nodePosn]
             if existing > node:
                 existing.setDistance(nodeDist)
+                existing.setParent(node.getParent())
                 heapq.heapify(self.heapList)
                 return True
             return False
