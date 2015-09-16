@@ -16,7 +16,7 @@ of 62). For the second world, my heuristic did better with a score of 142
 compared with 144 (both explored 60 squares).
 
 My heuristic did not outperform the Manhattan in world 1 because it tried to
-find a path with the least obstacles (in terms of line of sight). This turned
+find a diagonal path with a small amount of obstacles in the way. This turned
 out to not always be the most efficient path. However, it was more efficient
 for world 2.
 
