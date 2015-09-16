@@ -15,7 +15,8 @@ class MazeSolver(object):
             minNext = heap.pop()
             if minNext.getPosition() == end:
                 self.readSolution(minNext, world)
-                print "Squares explored: ", heap.getSquaresExplored()
+                print "Squares explored (had distances calculated for them): ",
+                print heap.getSquaresExplored()
                 return
             else:
                 self.addAdjacent(minNext, world, heuristic, heap)
@@ -74,7 +75,7 @@ def customHeuristic(position, world):
     score = 0
     while xLim > curr[0] and yLim > curr[1]:
         if xLim == curr[0]:
-            curr[1] += 10
+            curr[1] += 1
             score += 2
         elif yLim == curr[1]:
             curr[0] += 1

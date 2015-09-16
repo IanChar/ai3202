@@ -6,8 +6,8 @@ python MazeSolver.py
 ```
 
 ## My heuristic
-I chose my heuristic based of of line of sight of the goal with consideration
-of obstacles. I thought this would be a good heuristic because it takes
+I chose my heuristic in such a way that the heuristic takes obstacles and
+diagonals into account. I thought this would be a good heuristic because it takes
 advantage of the fact that moving diagonal is cheaper per square moved.
 In addition, my heuristic takes obstacles into account which the Manhattan
 heuristic does not. In the end, my heuristic did worse on world one with a
@@ -19,6 +19,12 @@ My heuristic did not outperform the Manhattan in world 1 because it tried to
 find a path with the least obstacles (in terms of line of sight). This turned
 out to not always be the most efficient path. However, it was more efficient
 for world 2.
+
+### Heuristic function
+My function will first try to make as many diagonal moves from a spot as possible.
+If no more diagonal moves can be made it will go horizontally or vertically to the
+goal. Each diagonal move adds 3 points, each horizontal or vertical move adds 2 points,
+mountains add 2 points, and walls add 7 points.
 
 ### Results
 Results of my heuristic are shown below. In order to view correctly view original
@@ -50,7 +56,7 @@ x 0 2 0 0 2 1 0 1 0
 x 0 2 0 0 2 0 0 2 0
 x 0 2 0 1 2 0 1 2 2
 x 0 0 0 0 0 0 0 0 0
-Squares explored: 59
+Squares explored (had distances calculated for them): 59
 
 World 2:
 --------------------Log----------------------
@@ -78,4 +84,4 @@ Total cost without heuristic is: 142
 x 2 2 0 2 2 0 0 2 0
 x 0 2 0 1 2 0 1 2 2
 x 0 0 0 0 0 0 0 0 0
-Squares Explored: 60
+Squares explored (had distances calculated for them): 60
