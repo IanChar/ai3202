@@ -4,6 +4,9 @@ In order to run execute the following...
 ```
 python MazeSolver.py
 ```
+You will then be given options of what maze you want to run with what
+heuristic. Enter the number corresponding the desired option, or press
+'q' to quit.
 
 ## My heuristic
 I chose my heuristic in such a way that the heuristic takes obstacles and
