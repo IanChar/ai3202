@@ -29,13 +29,38 @@ If no more diagonal moves can be made it will go horizontally or vertically to t
 goal. Each diagonal move adds 3 points, each horizontal or vertical move adds 2 points,
 mountains add 2 points, and walls add 7 points.
 
-### Results
-Results of my heuristic are shown below. In order to view correctly view original
+## Results
+Results from my program are shown below. In order to view correctly view original
 source of README. Otherwise, you can just run the program to get the same output.
 
-World 1:
---------------------Log----------------------
+### World 1: Manhattan Heuristic
+> --------------------Log----------------------
+(0, 0) with cost 0
+(1, 0) with cost 25
+(2, 0) with cost 49
+(3, 1) with cost 75
+(4, 2) with cost 99
+(4, 3) with cost 118
+(5, 4) with cost 139
+(6, 4) with cost 155
+(7, 5) with cost 173
+(8, 5) with cost 186
+(9, 6) with cost 201
+(9, 7) with cost 211
+Total cost without heuristic is: 130
+-------------------Maze---------------------
+0 0 0 0 1 0 1 1 0 x
+2 2 1 1 0 0 2 0 2 x
+0 0 0 0 0 0 2 x x 0
+2 0 2 2 0 x x 0 2 0
+0 0 2 0 x 2 1 0 1 0
+0 0 2 0 x 2 0 0 2 0
+0 0 2 x 1 2 0 1 2 2
+x x x 0 0 0 0 0 0 0
+Squares explored (had distances calculated for them):  62
 
+### World 1: Custom Heuristic
+> --------------------Log----------------------
 (0, 0) with cost 0
 (0, 1) with cost 44
 (0, 2) with cost 76
@@ -59,10 +84,35 @@ x 0 2 0 0 2 1 0 1 0
 x 0 2 0 0 2 0 0 2 0
 x 0 2 0 1 2 0 1 2 2
 x 0 0 0 0 0 0 0 0 0
-Squares explored (had distances calculated for them): 59
+Squares explored (had distances calculated for them):  59
 
-World 2:
---------------------Log----------------------
+### World 2: Manhattan Heuristic
+> --------------------Log----------------------
+(0, 0) with cost 0
+(1, 0) with cost 25
+(2, 0) with cost 49
+(3, 1) with cost 75
+(3, 2) with cost 96
+(4, 3) with cost 119
+(5, 4) with cost 140
+(6, 4) with cost 156
+(7, 5) with cost 184
+(8, 6) with cost 210
+(9, 7) with cost 224
+Total cost without heuristic is: 144
+-------------------Maze---------------------
+0 0 0 0 0 0 0 0 0 x
+2 2 1 1 0 2 2 1 x 0
+0 0 0 0 0 2 2 x 1 0
+2 2 2 2 0 x x 1 1 0
+0 0 0 0 x 2 1 1 1 0
+0 2 2 x 2 2 0 0 2 0
+0 0 2 x 1 2 0 1 2 2
+x x x 0 0 0 0 0 0 0
+Squares explored (had distances calculated for them):  60
+
+### World 2: Custom Heuristic
+> --------------------Log----------------------
 (0, 0) with cost 0
 (0, 1) with cost 49
 (0, 2) with cost 81
@@ -87,4 +137,4 @@ Total cost without heuristic is: 142
 x 2 2 0 2 2 0 0 2 0
 x 0 2 0 1 2 0 1 2 2
 x 0 0 0 0 0 0 0 0 0
-Squares explored (had distances calculated for them): 60
+Squares explored (had distances calculated for them):  60
