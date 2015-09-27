@@ -24,4 +24,4 @@ if __name__ == '__main__':
     for row in wb.readWorld():
         print ""
         for n in row:
-            print n.getUtility(),
+            print n.getReward(),

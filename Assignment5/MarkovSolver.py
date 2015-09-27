@@ -9,7 +9,7 @@ class MarkovSolver(object):
 
     def findPolicy(self):
         # 10 test iterations for now but later base on epsilon
-        for i in range(2):
+        for i in range(10000):
             for row in reversed(self.world):
                 for n in reversed(row):
                     self.calculateUtility(n)
@@ -17,14 +17,15 @@ class MarkovSolver(object):
 
     # calculates utility at a node and sets the direction and utility
     def calculateUtility(self, node):
-        if node.getObstacle() == 2:
+        if node.getObstacle() == 2 or node.getObstacle() == 50:
             return
         posn = node.getPosition()
         expectedValues = []
+        # Note that top and down utilities switched since world is also switched
         if posn[1] - 1 < 0:
-            topUtility = 0
+            downUtility = 0
         else:
-            topUtility = self.world[posn[1] - 1][posn[0]].getUtility()
+            downUtility = self.world[posn[1] - 1][posn[0]].getUtility()
         if posn[0] - 1 < 0:
             leftUtility = 0
         else:
@@ -34,10 +35,9 @@ class MarkovSolver(object):
         else:
             rightUtility = self.world[posn[1]][posn[0] + 1].getUtility()
         if posn[1] + 1 > 7:
-            downUtility = 0
+            topUtility = 0
         else:
-            downUtility = self.world[posn[1] + 1][posn[0]].getUtility()
-        # go top
+            topUtility = self.world[posn[1] + 1][posn[0]].getUtility()
         expectedValues.append(((0.8 * topUtility + 0.1 * leftUtility
                 + 0.1 * rightUtility), Node.UP_DIRECTION))
         expectedValues.append(((0.8 * leftUtility + 0.1 * topUtility
@@ -47,7 +47,7 @@ class MarkovSolver(object):
         expectedValues.append(((0.8 * downUtility + 0.1 * leftUtility
                 + 0.1 * rightUtility), Node.DOWN_DIRECTION))
         maxExpectation = max(expectedValues)
-        node.setUtility(int(node.getUtility() + GAMMA * maxExpectation[0]))
+        node.setUtility(int(node.getReward() + GAMMA * maxExpectation[0]))
         node.setDirection(maxExpectation[1])
         return node
 
@@ -64,4 +64,5 @@ if __name__ == '__main__':
     wb = WorldBuilder()
     w = wb.readWorld()
     ms = MarkovSolver(w, 0.5)
+    print ms.calculateUtility(w[7][8])
     ms.findPolicy()
