@@ -1,4 +1,5 @@
 import Node
+import sys
 from WorldBuilder import WorldBuilder
 GAMMA = 0.9
 
@@ -9,7 +10,7 @@ class MarkovSolver(object):
 
     def findPolicy(self):
         # 10 test iterations for now but later base on epsilon
-        for i in range(10000):
+        for i in range(100):
             for row in reversed(self.world):
                 for n in reversed(row):
                     self.calculateUtility(n)
@@ -47,14 +48,16 @@ class MarkovSolver(object):
         expectedValues.append(((0.8 * downUtility + 0.1 * leftUtility
                 + 0.1 * rightUtility), Node.DOWN_DIRECTION))
         maxExpectation = max(expectedValues)
-        node.setUtility(int(node.getReward() + GAMMA * maxExpectation[0]))
+        node.setUtility(float(node.getReward() + GAMMA * maxExpectation[0]))
         node.setDirection(maxExpectation[1])
         return node
 
     def printSolution(self):
+        print "-------------------Node Utilities-------------------"
         for row in reversed(self.world):
             for n in row:
                 print n
+        print "\n---------------------Map Policy---------------------"
         policyMatrix = [[n.getDirection() for n in row]
                 for row in reversed(self.world)]
         for row in policyMatrix:
@@ -63,6 +66,11 @@ class MarkovSolver(object):
 if __name__ == '__main__':
     wb = WorldBuilder()
     w = wb.readWorld()
-    ms = MarkovSolver(w, 0.5)
+    try:
+        epsilon = int(sys.argv[1])
+    except:
+        epsilon = 0.5
+    print epsilon
+    ms = MarkovSolver(w, epsilon)
     print ms.calculateUtility(w[7][8])
     ms.findPolicy()
