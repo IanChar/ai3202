@@ -8,7 +8,12 @@ class MarkovSolver(object):
         self.epsilon = epsilon
 
     def findPolicy(self):
-        pass
+        # 10 test iterations for now but later base on epsilon
+        for i in range(2):
+            for row in reversed(self.world):
+                for n in reversed(row):
+                    self.calculateUtility(n)
+        self.printSolution()
 
     # calculates utility at a node and sets the direction and utility
     def calculateUtility(self, node):
@@ -44,13 +49,19 @@ class MarkovSolver(object):
         maxExpectation = max(expectedValues)
         node.setUtility(int(node.getUtility() + GAMMA * maxExpectation[0]))
         node.setDirection(maxExpectation[1])
+        return node
 
     def printSolution(self):
-        pass
+        for row in reversed(self.world):
+            for n in row:
+                print n
+        policyMatrix = [[n.getDirection() for n in row]
+                for row in reversed(self.world)]
+        for row in policyMatrix:
+            print " ".join(row)
 
 if __name__ == '__main__':
     wb = WorldBuilder()
     w = wb.readWorld()
     ms = MarkovSolver(w, 0.5)
-    ms.calculateUtility(w[1][1])
-    print w[1][1]
+    ms.findPolicy()

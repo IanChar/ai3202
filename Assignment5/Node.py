@@ -2,7 +2,9 @@ UP_DIRECTION = "U"
 DOWN_DIRECTION = "D"
 LEFT_DIRECTION = "L"
 RIGHT_DIRECTION = "R"
-directions = [UP_DIRECTION, DOWN_DIRECTION, LEFT_DIRECTION, RIGHT_DIRECTION]
+NO_DIRECTION = "X"
+directions = [UP_DIRECTION, DOWN_DIRECTION, LEFT_DIRECTION,
+        RIGHT_DIRECTION, NO_DIRECTION]
 
 class Node(object):
     def __init__(self, position, obstacle):
@@ -20,7 +22,7 @@ class Node(object):
             self.utility = 1
         else:
             self.utility = obstacle
-        self.optimalDirection = None
+        self.optimalDirection = NO_DIRECTION
 
     # Returns a tuple of coordinates
     def getPosition(self):
@@ -33,9 +35,7 @@ class Node(object):
         return self.utility
 
     def setUtility(self, utility):
-        if not isinstance(utility, int):
-            raise TypeError("Utility must be of type int.")
-        self.utiltiy = utility
+        self.utility = utility
 
     def getDirection(self):
         return self.optimalDirection
@@ -46,28 +46,28 @@ class Node(object):
         self.optimalDirection = direction
 
     def __str__(self):
-        if self.optimalDirection is None:
+        if self.optimalDirection == NO_DIRECTION:
             return (str(self.position) + " with utility " + str(self.utility)
                     + " and no direction.")
         return (str(self.position) + " with utility " + str(self.utility)
                 + " in direction " + self.optimalDirection)
 
     def __cmp__(self, other):
-        if self.optimal is None:
-            if other.optimal is None:
+        if self.utility is None:
+            if other.utility is None:
                 return 0
             else:
                 return -1
-        if other.optimal is None:
+        if other.utility is None:
             return 1
-        if self.optimal > other.optimal:
+        if self.utility > other.utility:
             return 1
-        elif self.optimal < other.optimal:
+        elif self.utility < other.utility:
             return -1
         return 0
 
 if __name__ == '__main__':
-    testNode = Node((1, 2), 0)
+    testNode = Node((1, 2), 3)
     print "Try printing the node..."
     print testNode
     print "Set utility..."

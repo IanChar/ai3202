@@ -20,7 +20,7 @@ class WorldBuilder(object):
 if __name__ == '__main__':
     wb = WorldBuilder()
     print "-------Read in World-------"
-    print wb.readWorld()[5][6]
+    print wb.readWorld()[7][9]
     for row in wb.readWorld():
         print ""
         for n in row:
