@@ -2,9 +2,12 @@ import Node
 
 class WorldBuilder(object):
     # Returns a matrix representing world 1
-    def readWorld(self):
+    def readWorld(self, filename):
         world = []
-        f = open('World1MDP.txt', 'r').readlines()
+        try:
+            f = open(filename, 'r').readlines()
+        except:
+            raise Exception("Could not open specified file.")
         # Reverse to match normal coordinates
         for line in reversed(f):
             world.append(line.split(" "))
