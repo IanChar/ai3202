@@ -15,15 +15,18 @@ class BayesNetCalculator(object):
     # second element is the command that produced that result.
     def execCommand(self, command):
         if (command[0][1:] == 'g'):
-            return self.execConditional(command[1])
+            toReturn = self.execConditional(command[1])
         elif (command[0][1:] == 'j'):
-            return self.execJoint(command[1])
+            toReturn = self.execJoint(command[1])
         elif (command[0][1:] == 'm'):
-            return self.execMarginal(command[1])
+            toReturn = self.execMarginal(command[1])
         elif (command[0][1:] == 'p'):
-            return self.changePrior(command[1])
+            toReturn = self.changePrior(command[1])
         else:
             raise Exception("Unknown flag passed in.")
+        if not isinstance(toReturn, list):
+            toReturn = [toReturn]
+        return toReturn
 
     def execConditional(self, command):
         pass
@@ -35,7 +38,7 @@ class BayesNetCalculator(object):
         if command.upper() == command:
             # Case that all options are wanted (capital letter entered)
             toReturn = []
-            toReturn.append(self.execMarginal(commmand.lower()))
+            toReturn.append(self.execMarginal(command.lower()))
             toReturn.append(self.execMarginal('^' + command.lower()))
             return toReturn
         else:
@@ -49,7 +52,7 @@ class BayesNetCalculator(object):
             except KeyError:
                 print "Invalid command given " + command
                 return
-            if node.getDependencies() is None:
+            if isinstance(node, PriorNode):
                 result = node.getProbability()
             else:
                 deps = node.getDependencies()
@@ -61,7 +64,7 @@ class BayesNetCalculator(object):
                             for j in range(len(deps))])
                     resultComponent *= node.getProbability(query)
                     for k in range(len(deps)):
-                        nestedCommand = "^" if query[k] else ""
+                        nestedCommand = "^" if not query[k] else ""
                         nestedCommand += deps[k].lower()
                         resultComponent *= self.execMarginal(nestedCommand)[0]
                     result += resultComponent
@@ -83,9 +86,9 @@ def buildCancerNetwork():
             (True, True): 0.03,
             (True, False): 0.001}
     nodes['C'] = Node('C', ['P', 'S'], cancerProbabilities)
-    xProbabilities = {(True): 0.9, (False): 0.2}
+    xProbabilities = {tuple([True]): 0.9, tuple([False]): 0.2}
     nodes['X'] = Node('X', ['C'], xProbabilities)
-    dProbabilities = {(True): 0.65, (False): 0.3}
+    dProbabilities = {tuple([True]): 0.65, tuple([False]): 0.3}
     nodes['D'] = Node('D', ['C'], dProbabilities)
     return nodes
 
@@ -101,6 +104,7 @@ if __name__ == '__main__':
         bn = BayesNetCalculator(buildCancerNetwork())
         for command in optlist:
             try:
-                print bn.execCommand(command)
+                for ans, question in bn.execCommand(command):
+                    print question + " = " + str(ans)
             except KeyError as err:
                 print err
