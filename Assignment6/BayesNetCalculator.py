@@ -50,8 +50,7 @@ class BayesNetCalculator(object):
             try:
                 node = self.net[command.upper()]
             except KeyError:
-                print "Invalid command given " + command
-                return
+                raise Exception("Invalid command given " + command)
             if isinstance(node, PriorNode):
                 result = node.getProbability()
             else:
@@ -73,7 +72,13 @@ class BayesNetCalculator(object):
             return (result, resultString)
 
     def changePrior(self, command):
-        pass
+        toChange = command[:1]
+        newVal = float(command[2:])
+        try:
+            self.net[toChange].setProbability(newVal)
+        except KeyError:
+            raise Exception("Invalid command given " + command)
+        return (newVal, "P(" + toChange + ")")
 
 # returns dict of nodes in the graph
 def buildCancerNetwork():
