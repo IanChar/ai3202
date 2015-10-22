@@ -29,7 +29,10 @@ class PriorNode(Node):
         super(PriorNode, self).__init__(name, None, probability, children)
 
     def getProbability(self, condition = None):
-        return self.probabilities
+        if condition is None or condition == tuple([True]):
+            return self.probabilities
+        else:
+            return 1 - self.probabilities
 
     def setProbability(self, probability):
         self.probabilities = probability
