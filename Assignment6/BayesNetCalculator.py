@@ -9,6 +9,7 @@ class BayesNetCalculator(object):
     def __init__(self, net):
         # net is a dictionary of all the nodes
         self.net = net
+        self.levels = self.findNumDeps()
 
     # Executes a given command. Commands are expected to be in tuple form.
     # Returns list of tuples where first element is the result and the
@@ -80,21 +81,42 @@ class BayesNetCalculator(object):
             raise Exception("Invalid command given " + command)
         return (newVal, "P(" + toChange + ")")
 
+    # HELPER FUNCTIONS
+
+    # Performs depth first search to map how far down in the net each node is.
+    def findNumDeps(self):
+        deps = {}
+        # Nested helper function
+        def depHelper(curr, level):
+            if curr.getName() in deps.keys():
+                if level < deps[curr.getName()]:
+                    deps[curr.getName()] = level
+            else:
+                deps[curr.getName()] = level
+            for child in curr.getChildren():
+                depHelper(self.net[child], level + 1)
+
+        # Main function logic
+        for value in self.net.values():
+            if isinstance(value, PriorNode):
+                depHelper(value, 0)
+        return deps
+
 # returns dict of nodes in the graph
 def buildCancerNetwork():
     nodes = {}
-    nodes['P'] = PriorNode('P', 0.9)
-    nodes['S'] = PriorNode('S', 0.3)
+    nodes['P'] = PriorNode('P', 0.9, ['C'])
+    nodes['S'] = PriorNode('S', 0.3, ['C'])
     # Note that here high pollution is represented by False
     cancerProbabilities = {(False, True): 0.05,
             (False, False): 0.02,
             (True, True): 0.03,
             (True, False): 0.001}
-    nodes['C'] = Node('C', ['P', 'S'], cancerProbabilities)
+    nodes['C'] = Node('C', ['P', 'S'], cancerProbabilities, ['X', 'D'])
     xProbabilities = {tuple([True]): 0.9, tuple([False]): 0.2}
-    nodes['X'] = Node('X', ['C'], xProbabilities)
+    nodes['X'] = Node('X', ['C'], xProbabilities, [])
     dProbabilities = {tuple([True]): 0.65, tuple([False]): 0.3}
-    nodes['D'] = Node('D', ['C'], dProbabilities)
+    nodes['D'] = Node('D', ['C'], dProbabilities, [])
     return nodes
 
 if __name__ == '__main__':
