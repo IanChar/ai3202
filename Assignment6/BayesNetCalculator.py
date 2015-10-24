@@ -1,5 +1,6 @@
 import getopt
 import sys
+import traceback
 from Node import Node
 from Node import PriorNode
 
@@ -41,6 +42,20 @@ class BayesNetCalculator(object):
         subject = args[:index]
         conditions = args[index + 1:]
 
+        # Check to see if there is no dependence between subject and condition
+        isIndependent = True
+        for s in self.getNodes(subject):
+            if not isinstance(self.getFromNet(s.upper()), PriorNode):
+                isIndependent = False
+        for c in self.getNodes(conditions):
+            if not isinstance(self.getFromNet(c.upper()), PriorNode):
+                isIndependent = False
+        if isIndependent:
+            if len(subject) == 1:
+                return self.execMarginal(subject[0])[0][0]
+            else:
+                return self.execJoint(subject)
+
         # Check to see what kind of reasoning
         # diagnostic if condition levels > subject level
         diagnostic = True
@@ -81,7 +96,7 @@ class BayesNetCalculator(object):
             if negated:
                 command = command[1:]
             try:
-                node = self.net[command.upper()]
+                node = self.getFromNet(command.upper())
             except KeyError:
                 raise Exception("Invalid command given " + command)
             if isinstance(node, PriorNode):
@@ -108,7 +123,7 @@ class BayesNetCalculator(object):
         toChange = command[:1]
         newVal = float(command[2:])
         try:
-            self.net[toChange].setProbability(newVal)
+            self.getFromNet(toChange).setProbability(newVal)
         except KeyError:
             raise Exception("Invalid command given " + command)
         return (newVal, "P(" + toChange + ")")
@@ -122,64 +137,69 @@ class BayesNetCalculator(object):
         cNodes = self.getNodes(conditions)
         # Can only handle one variable right now
         if len(sNodes) == 1:
-            result = 0
-            s = self.net[sNodes[0]]
+            s = self.getFromNet(sNodes[0])
             subjDeps = s.getDependencies()
             # Find the dependencies where they are a string of the path to the
             # given node.
-            depChains = [self.findDepChain(s, self.net[c])
+            depChains = [self.findDepChain(s, self.getFromNet(c))
                     for c in cNodes]
-            '''
-            TODO:
-            * change this to check if they are all direct independence
-            * Change how depChains variable works down below
-            '''
+
             # Check if directly dpenedent
             directlyDependent = True
             for dC in depChains:
                 if len(dC) > 1:
                     directlyDependent = False
             if directlyDependent:
-                # Case where all conditions have some direct dependence to the
-                # subject.
-                unknowns = len(subjDeps) - len(depChains)
-                for i in range(1 << unknowns):
-                    # Construct the query
-                    query = []
-                    # tmp array that holds possibilities of unlisted dependents
-                    tmp = [1 == ((i >> j) & 1) for j in range(unknowns)]
-                    # Figure out which to elements of tmp to insert in query
-                    for sD in subjDeps:
-                        found = False
-                        for dCIndex, dC in enumerate(depChains):
-                            if dC == sD:
-                                # This all assumes that depChains keeps the
-                                # same order as condtions
-                                query.append(conditions[dCIndex][:1] != "~")
-                                found = True
-                        if not found:
-                            query.append(tmp.pop())
-                    acc = s.getProbability(tuple(query))
-                    # Multiply by marginals
-                    for index, val in enumerate(subjDeps):
-                        needsAccounting = True
-                        for dC in depChains:
-                            if val == dC:
-                                needsAccounting = False
-                        if needsAccounting:
-                            command = "~" if not query[index] else ""
-                            command += subjDeps[index].lower()
-                            acc *= self.execMarginal(command)[0][0]
-                    result += acc
+                result = self.directPredictive(s, conditions, subjDeps,
+                        depChains)
                 if subject[0][:1] == "~":
                     result = 1 - result
                 return result
             else:
+                # Case where not directly dependent
                 raise NotImplementedError("Logic required to compute this has"
                         + " not yet been implemented.")
         else:
+            # Case where there are multiple subjects
             raise NotImplementedError("Logic required to compute this has not"
                     + " yet been implemented.")
+
+    # Case where all conditions have some direct dependence to the subject.
+    # subject is a node of the single subject, conditions is a list of the
+    # names of the conditions, subjDeps is the names of s's direct dependents,
+    # and depChains is the chain to get from the subject to each condition.
+    def directPredictive(self, subject, conditions, subjDeps, depChains):
+        result = 0
+        unknowns = len(subjDeps) - len(depChains)
+        for i in range(1 << unknowns):
+            # Construct the query
+            query = []
+            # tmp array that holds possibilities of unlisted dependents
+            tmp = [1 == ((i >> j) & 1) for j in range(unknowns)]
+            # Figure out which to elements of tmp to insert in query
+            for sD in subjDeps:
+                found = False
+                for dCIndex, dC in enumerate(depChains):
+                    if dC == sD:
+                        # This all assumes that depChains keeps the
+                        # same order as condtions
+                        query.append(conditions[dCIndex][:1] != "~")
+                        found = True
+                if not found:
+                    query.append(tmp.pop())
+            acc = subject.getProbability(tuple(query))
+            # Multiply by marginals
+            for index, val in enumerate(subjDeps):
+                needsAccounting = True
+                for dC in depChains:
+                    if val == dC:
+                        needsAccounting = False
+                if needsAccounting:
+                    command = "~" if not query[index] else ""
+                    command += subjDeps[index].lower()
+                    acc *= self.execMarginal(command)[0][0]
+            result += acc
+        return result
 
     def intercausalReasoning(self, subject, conditions):
         raise NotImplementedError("Logic required to compute this has"
@@ -189,6 +209,15 @@ class BayesNetCalculator(object):
                 + " not yet been implemented.")
 
     # HELPER FUNCTIONS
+
+    def getFromNet(self, key):
+        result = None
+        try:
+            result = self.net[key]
+        except KeyError as err:
+            traceback.print_stack()
+            print "  Node", err, "not found in net.\n"
+        return result
 
     # Find the chain of nodes linking a child to a parent with BFS
     def findDepChain(self, start, finish):
@@ -202,10 +231,10 @@ class BayesNetCalculator(object):
             if curr == finish.getName():
                 return prev + curr
             if curr not in visited:
-                toAdd = self.net[curr].getDependencies()
+                toAdd = self.getFromNet(curr).getDependencies()
                 if toAdd is not None:
                     Q += [(n, prev + curr)
-                            for n in self.net[curr].getDependencies()]
+                            for n in self.getFromNet(curr).getDependencies()]
                 visited.append(curr)
         return None
 
@@ -221,7 +250,7 @@ class BayesNetCalculator(object):
             else:
                 deps[curr.getName()] = level
             for child in curr.getChildren():
-                depHelper(self.net[child], level + 1)
+                depHelper(self.getFromNet(child), level + 1)
 
         # Main function logic
         for value in self.net.values():
