@@ -5,6 +5,7 @@ from Node import Node
 from Node import PriorNode
 
 FLAGS = ':g:j:m:p:'
+NOT_IMPLEMENTED = NotImplementedError("Unable to compute the following request")
 
 class BayesNetCalculator(object):
     def __init__(self, net):
@@ -31,6 +32,36 @@ class BayesNetCalculator(object):
         if not isinstance(toReturn, list):
             toReturn = [toReturn]
         return toReturn
+
+    def loopThroughCapitals(self, command, func, prevArgs = (None, None)):
+        toReturn = []
+        # Set args and see if there any capital letters
+        startPoint = 0
+        capitalFound = False
+        if prevArgs[0] is not None:
+            args = prevArgs[0]
+            startPoint = prevArgs[1]
+        else:
+            args = self.parseArgs(command)
+        while startPoint < len(args) and not capitalFound:
+            if args[startPoint] == "|":
+                startPoint += 1
+            if args[startPoint].upper() == args[startPoint]:
+                capitalFound = True
+                argCopy = list(args)
+                argCopy[startPoint] = argCopy[startPoint].lower()
+                toReturn += self.loopThroughCapitals("".join(argCopy), func,
+                        (argCopy, startPoint + 1))
+                argCopy[startPoint] = "~" + argCopy[startPoint]
+                toReturn += self.loopThroughCapitals("".join(argCopy), func,
+                        (argCopy, startPoint + 1))
+            startPoint += 1
+
+        # Calculate the actual probability
+        if not capitalFound:
+            toReturn.append((func(args), "P(" + command + ")"))
+        return toReturn
+
 
     def execConditional(self, args):
         # Seperate the subject from the conditions
@@ -129,8 +160,7 @@ class BayesNetCalculator(object):
         return (newVal, "P(" + toChange + ")")
 
     def diagnosticReasoning(self, subject, conditions):
-        raise NotImplementedError("Logic required to compute this has"
-                + " not yet been implemented.")
+        raise NOT_IMPLEMENTED
 
     def predictiveReasoning(self, subject, conditions):
         sNodes = self.getNodes(subject)
@@ -150,25 +180,23 @@ class BayesNetCalculator(object):
                 if len(dC) > 1:
                     directlyDependent = False
             if directlyDependent:
-                result = self.directPredictive(s, conditions, subjDeps,
-                        depChains)
-                if subject[0][:1] == "~":
-                    result = 1 - result
-                return result
+                result = self.directPredictive(s, conditions, depChains)
             else:
                 # Case where not directly dependent
-                raise NotImplementedError("Logic required to compute this has"
-                        + " not yet been implemented.")
+                result = self.indirectPredictive(s, conditions, depChains)
+            if subject[0][:1] == "~":
+                result = 1 - result
+            return result
         else:
             # Case where there are multiple subjects
-            raise NotImplementedError("Logic required to compute this has not"
-                    + " yet been implemented.")
+            raise NOT_IMPLEMENTED
 
     # Case where all conditions have some direct dependence to the subject.
     # subject is a node of the single subject, conditions is a list of the
-    # names of the conditions, subjDeps is the names of s's direct dependents,
-    # and depChains is the chain to get from the subject to each condition.
-    def directPredictive(self, subject, conditions, subjDeps, depChains):
+    # names of the conditions, and depChains is the chain to get from the
+    # subject to each condition.
+    def directPredictive(self, subject, conditions, depChains):
+        subjDeps = subject.getDependencies()
         result = 0
         unknowns = len(subjDeps) - len(depChains)
         for i in range(1 << unknowns):
@@ -201,12 +229,74 @@ class BayesNetCalculator(object):
             result += acc
         return result
 
+    # Opposite of directPredictive
+    def indirectPredictive(self, subject, conditions, depChains):
+        subjDeps = subject.getDependencies()
+        # CASE 1
+        # Check if one path is a substring of the other (> 1 condition).
+        indicesToRemove = []
+        for i, dC1 in enumerate(depChains):
+            for j, dC2 in enumerate(depChains):
+                if i != j and (dC1 == dC2 or dC1 == dC2[:-1]):
+                    indicesToRemove.append(j)
+        # Remove redundent dependencies and start over
+        if len(indicesToRemove) > 0:
+            # Make sure to sort list and but in reverse order so that
+            # removal of elements isn't a problem. This also works because
+            # we assume conditions and depChains match up
+            indicesToRemove.sort()
+            for i in indicesToRemove[::-1]:
+                depChains.pop(i)
+                conditions.pop(i)
+            return self.predictiveReasoning(
+                    [subject.getName().lower()], conditions)
+
+        # CASE 2
+        # Either there is only one condition or the conditions have the same
+        # path leading up to the condition.
+        canCompute = len(conditions)
+        if not canCompute:
+            canCompute = True
+            for i, dC1 in enumerate(depChains):
+                for j, dC2 in enumerate(depChains):
+                    if i != j and dC1[:-1] != dC2[:-1]:
+                        canCompute = False
+                        break
+        if canCompute:
+            result = 0
+            mainChain = depChains[0][:-1]
+            # Loop over possibilities that path to condition can take
+            for iterNum in range(1 << len(mainChain)):
+                resultComponent = 1
+                # Generate list of true or falses to represent chain config
+                currConfig = [1 == ((iterNum >> j) & 1)
+                        for j in range(len(mainChain))]
+
+                # Loop through the chain and multiply conditionals together
+                former = subject.getName()
+                for i, latter in enumerate(mainChain):
+                    if i > 0:
+                        f = (("~" if not currConfig[i - 1] else "")
+                                + former.lower())
+                    else:
+                        f = former.lower()
+                    l = ("~" if not currConfig[i] else "") + latter.lower()
+                    resultComponent *= self.predictiveReasoning([f], [l])
+                    former = latter
+                # Final component of the chain
+                f = ("~" if not currConfig[-1] else "") + former.lower()
+                resultComponent *= self.predictiveReasoning([f], conditions)
+                result += resultComponent
+            return result
+        else:
+            raise NOT_IMPLEMENTED
+        print subject, conditions, subjDeps, depChains
+        return 1
+
     def intercausalReasoning(self, subject, conditions):
-        raise NotImplementedError("Logic required to compute this has"
-                + " not yet been implemented.")
+        raise NOT_IMPLEMENTED
     def combinedReasoning(self, subject, conditions):
-        raise NotImplementedError("Logic required to compute this has"
-                + " not yet been implemented.")
+        raise NOT_IMPLEMENTED
 
     # HELPER FUNCTIONS
 
@@ -270,35 +360,6 @@ class BayesNetCalculator(object):
             if char != "~":
                 i += 1
         return args
-
-    def loopThroughCapitals(self, command, func, prevArgs = (None, None)):
-        toReturn = []
-        # Set args and see if there any capital letters
-        startPoint = 0
-        capitalFound = False
-        if prevArgs[0] is not None:
-            args = prevArgs[0]
-            startPoint = prevArgs[1]
-        else:
-            args = self.parseArgs(command)
-        while startPoint < len(args) and not capitalFound:
-            if args[startPoint] == "|":
-                startPoint += 1
-            if args[startPoint].upper() == args[startPoint]:
-                capitalFound = True
-                argCopy = list(args)
-                argCopy[startPoint] = argCopy[startPoint].lower()
-                toReturn += self.loopThroughCapitals("".join(argCopy), func,
-                        (argCopy, startPoint + 1))
-                argCopy[startPoint] = "~" + argCopy[startPoint]
-                toReturn += self.loopThroughCapitals("".join(argCopy), func,
-                        (argCopy, startPoint + 1))
-            startPoint += 1
-
-        # Calculate the actual probability
-        if not capitalFound:
-            toReturn.append((func(args), "P(" + command + ")"))
-        return toReturn
 
     # Strips negates and capitalizes. Makes copy so don't have to worry about
     # a change in the data.
