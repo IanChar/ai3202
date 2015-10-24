@@ -114,59 +114,100 @@ class BayesNetCalculator(object):
         return (newVal, "P(" + toChange + ")")
 
     def diagnosticReasoning(self, subject, conditions):
-        pass
+        raise NotImplementedError("Logic required to compute this has"
+                + " not yet been implemented.")
 
     def predictiveReasoning(self, subject, conditions):
         sNodes = self.getNodes(subject)
         cNodes = self.getNodes(conditions)
         # Can only handle one variable right now
-        s = self.net[sNodes[0]]
-        deps = s.getDependencies()
-        # Categorize the dependencies. These will hold tuples of indices of the
-        # dependencies of the subject and the index of the original condition.
-        directDependence = []
-        indirectDependence = []
-        for i in range(len(deps)):
-            for cIndex, c in enumerate(cNodes):
-                if c == deps[i]:
-                    directDependence.append((i, cIndex))
-
-        # For now we only deal with direct dependencies
-        result = 0
-        unknowns = len(deps) - len(directDependence)
-        for i in range(1 << unknowns):
-            query = []
-            tmp = [1 == ((i >> j) & 1) for j in range(unknowns)]
-            # Form a query
-            for k in range(len(deps)):
-                found = False
-                for index, cIndex in directDependence:
-                    if k == index:
-                        query.append(conditions[cIndex][:1] != "~")
-                        found = True
-                if not found:
-                    query.append(tmp.pop())
-            acc = s.getProbability(tuple(query))
-            print acc
-            # Multiply by marginals
-            for index, val in enumerate(deps):
-                needsAccounting = True
-                for ddIndex, cIndex in directDependence:
-                    if index == ddIndex:
-                        needsAccounting = False
-                if needsAccounting:
-                    command = "~" if not query[index] else ""
-                    command += deps[index].lower()
-                    acc *= self.execMarginal(command)[0][0]
-            result += acc
-        return result
+        if len(sNodes) == 1:
+            result = 0
+            s = self.net[sNodes[0]]
+            subjDeps = s.getDependencies()
+            # Find the dependencies where they are a string of the path to the
+            # given node.
+            depChains = [self.findDepChain(s, self.net[c])
+                    for c in cNodes]
+            '''
+            TODO:
+            * change this to check if they are all direct independence
+            * Change how depChains variable works down below
+            '''
+            # Check if directly dpenedent
+            directlyDependent = True
+            for dC in depChains:
+                if len(dC) > 1:
+                    directlyDependent = False
+            if directlyDependent:
+                # Case where all conditions have some direct dependence to the
+                # subject.
+                unknowns = len(subjDeps) - len(depChains)
+                for i in range(1 << unknowns):
+                    # Construct the query
+                    query = []
+                    # tmp array that holds possibilities of unlisted dependents
+                    tmp = [1 == ((i >> j) & 1) for j in range(unknowns)]
+                    # Figure out which to elements of tmp to insert in query
+                    for sD in subjDeps:
+                        found = False
+                        for dCIndex, dC in enumerate(depChains):
+                            if dC == sD:
+                                # This all assumes that depChains keeps the
+                                # same order as condtions
+                                query.append(conditions[dCIndex][:1] != "~")
+                                found = True
+                        if not found:
+                            query.append(tmp.pop())
+                    acc = s.getProbability(tuple(query))
+                    # Multiply by marginals
+                    for index, val in enumerate(subjDeps):
+                        needsAccounting = True
+                        for dC in depChains:
+                            if val == dC:
+                                needsAccounting = False
+                        if needsAccounting:
+                            command = "~" if not query[index] else ""
+                            command += subjDeps[index].lower()
+                            acc *= self.execMarginal(command)[0][0]
+                    result += acc
+                if subject[0][:1] == "~":
+                    result = 1 - result
+                return result
+            else:
+                raise NotImplementedError("Logic required to compute this has"
+                        + " not yet been implemented.")
+        else:
+            raise NotImplementedError("Logic required to compute this has not"
+                    + " yet been implemented.")
 
     def intercausalReasoning(self, subject, conditions):
-        pass
+        raise NotImplementedError("Logic required to compute this has"
+                + " not yet been implemented.")
     def combinedReasoning(self, subject, conditions):
-        pass
+        raise NotImplementedError("Logic required to compute this has"
+                + " not yet been implemented.")
 
     # HELPER FUNCTIONS
+
+    # Find the chain of nodes linking a child to a parent with BFS
+    def findDepChain(self, start, finish):
+        curr = start
+        visited = [start.getName()]
+        if start.getDependencies() is None:
+            return None
+        Q = [(n, "") for n in start.getDependencies()]
+        while len(Q) > 0:
+            curr, prev = Q.pop()
+            if curr == finish.getName():
+                return prev + curr
+            if curr not in visited:
+                toAdd = self.net[curr].getDependencies()
+                if toAdd is not None:
+                    Q += [(n, prev + curr)
+                            for n in self.net[curr].getDependencies()]
+                visited.append(curr)
+        return None
 
     # Performs depth first search to map how far down in the net each node is.
     # Note that if there are multiple paths the highest will be selected.
@@ -188,6 +229,7 @@ class BayesNetCalculator(object):
                 depHelper(value, 0)
         return deps
 
+    # Return an array of events for a given string
     def parseArgs(self, command):
         args = []
         i = 0
@@ -210,7 +252,7 @@ class BayesNetCalculator(object):
             startPoint = prevArgs[1]
         else:
             args = self.parseArgs(command)
-        if startPoint < len(args):
+        while startPoint < len(args) and not capitalFound:
             if args[startPoint] == "|":
                 startPoint += 1
             if args[startPoint].upper() == args[startPoint]:
@@ -222,6 +264,7 @@ class BayesNetCalculator(object):
                 argCopy[startPoint] = "~" + argCopy[startPoint]
                 toReturn += self.loopThroughCapitals("".join(argCopy), func,
                         (argCopy, startPoint + 1))
+            startPoint += 1
 
         # Calculate the actual probability
         if not capitalFound:
@@ -235,7 +278,7 @@ class BayesNetCalculator(object):
         for i, n in enumerate(l):
             if n[:1] == "~":
                 l[i] = n[1:]
-            l[i] = n.upper()
+            l[i] = l[i].upper()
         return l
 
 # returns dict of nodes in the graph
@@ -264,7 +307,8 @@ if __name__ == '__main__':
         parsed = False
 
     if parsed:
-        bn = BayesNetCalculator(buildCancerNetwork())
+        cancerNet = buildCancerNetwork()
+        bn = BayesNetCalculator(cancerNet)
         for command in optlist:
             try:
                 for ans, question in bn.execCommand(command):
