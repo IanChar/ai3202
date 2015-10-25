@@ -140,12 +140,10 @@ class BayesNetCalculator(object):
                         nodesInLevel.append(args[j])
                 seenLevels.append(currLevel)
                 clusteredArgs.append((currLevel, nodesInLevel))
-        # Check if there is only one level present, then we assume independence
+        # Check if there is only one level present, check if independent or Make
+        # independent
         if len(clusteredArgs) == 1:
-            result = 1
-            for a in clusteredArgs[0][1]:
-                result *= self.execMarginal(a)[0][0]
-            return result
+            return self.joinOneLevel(args, clusteredArgs)
         else:
             # Sort clusteredArgs in descending level order
             clusteredArgs.sort()
@@ -162,6 +160,41 @@ class BayesNetCalculator(object):
                         latter += clusteredArgs[j][1]
                     result *= self.execConditional(former + ["|"] + latter)
             return result
+
+    def joinOneLevel(self, args, clusteredArgs):
+        result = 1
+        # If all nodes are prior they will be independent
+        if clusteredArgs[0][0] == 0:
+            for a in clusteredArgs[0][1]:
+                result *= self.execMarginal(a)[0][0]
+            return result
+        # Can still be made independent if they nodes share a common
+        # dependency
+        ns = self.getNodes(clusteredArgs[0][1])
+        possibleCommon = self.getFromNet(ns[0]).getDependencies()
+        for pC in possibleCommon[::-1]:
+            for i in range(1, len(ns)):
+                foundCommon = False
+                for otherDep in self.getFromNet(ns[i]).getDependencies():
+                    if otherDep == pC:
+                        foundCommon = True
+                if not foundCommon:
+                    possibleCommon.remove(pC)
+        if len(possibleCommon) == 0:
+            raise NotImplementedError("Logic to compute " + args
+                    + " does not exist.")
+        # Condition on the common dependent and multiply together
+        else:
+            commonDep = possibleCommon[0]
+            addToResult = 1
+            for arg in args:
+                result *= self.execConditional([arg] + ["|"]
+                        + [commonDep.lower()])
+                addToResult *= self.execConditional([arg] + ["|"]
+                        + ["~" + commonDep.lower()])
+            result *= self.execMarginal(commonDep.lower())[0][0]
+            addToResult *= self.execMarginal("~" + commonDep.lower())[0][0]
+            return result + addToResult
 
     def execMarginal(self, command):
         if command.upper() == command:

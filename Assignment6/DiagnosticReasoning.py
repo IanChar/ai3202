@@ -78,6 +78,7 @@ class DiagnosticReasoning(Reasoning):
                         # indpendent...
                         for c in conditions:
                             command = [c] + ["|"] + [l]
+                            print command
                             resultComponent *= self.typeFuncs[
                                     'conditional'](command)
                     else:
@@ -104,7 +105,7 @@ class DiagnosticReasoning(Reasoning):
             if len(conditions) == 1:
                 toDivide = self.typeFuncs['marginal'](conditions[0])[0][0]
             else:
-                toDivide = self.typeFuncs['joint'](conditions)[0][0]
+                toDivide = self.typeFuncs['joint'](conditions)
             return result / toDivide
         else:
             self.notImplemented(subject + ["|"] + conditions)
