@@ -81,6 +81,10 @@ class BayesNetCalculator(object):
         subject = args[:index]
         conditions = args[index + 1:]
 
+        # Check to see if the subject is the same as the condition
+        if subject == conditions:
+            return 1
+
         # Check to see if there is no dependence between subject and condition
         isIndependent = True
         for s in self.getNodes(subject):

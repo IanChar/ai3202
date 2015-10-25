@@ -103,7 +103,7 @@ class PredictiveReasoning(Reasoning):
         # CASE 2
         # Either there is only one condition or the conditions have the same
         # path leading up to the condition.
-        canCompute = len(conditions)
+        canCompute = len(conditions) == 1
         if not canCompute:
             canCompute = True
             for i, dC1 in enumerate(depChains):

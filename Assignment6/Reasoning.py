@@ -43,6 +43,25 @@ class Reasoning(object):
                 visited.append(curr)
         return None
 
+    # Find the chain of nodes linking a child to a parent with BFS
+    def findChildChain(self, start, finish):
+        curr = start
+        visited = [start.getName()]
+        if start.getChildren() is None:
+            return None
+        Q = [(n, "") for n in start.getChildren()]
+        while len(Q) > 0:
+            curr, prev = Q.pop()
+            if curr == finish.getName():
+                return prev + curr
+            if curr not in visited:
+                toAdd = self.getFromNet(curr).getChildren()
+                if toAdd is not None:
+                    Q += [(n, prev + curr)
+                            for n in self.getFromNet(curr).getChildren()]
+                visited.append(curr)
+        return None
+
     # Strips negates and capitalizes. Makes copy so don't have to worry about
     # a change in the data.
     def getNodes(self, l):
