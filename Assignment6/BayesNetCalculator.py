@@ -143,7 +143,7 @@ class BayesNetCalculator(object):
         # Check if there is only one level present, check if independent or Make
         # independent
         if len(clusteredArgs) == 1:
-            return self.joinOneLevel(args, clusteredArgs)
+            return self.jointOneLevel(args, clusteredArgs)
         else:
             # Sort clusteredArgs in descending level order
             clusteredArgs.sort()
@@ -161,7 +161,9 @@ class BayesNetCalculator(object):
                     result *= self.execConditional(former + ["|"] + latter)
             return result
 
-    def joinOneLevel(self, args, clusteredArgs):
+    # Helper function for execJoint that deals with the case where there is
+    # only one level (how many dependents) of events passed in
+    def jointOneLevel(self, args, clusteredArgs):
         result = 1
         # If all nodes are prior they will be independent
         if clusteredArgs[0][0] == 0:
@@ -173,15 +175,18 @@ class BayesNetCalculator(object):
         ns = self.getNodes(clusteredArgs[0][1])
         possibleCommon = self.getFromNet(ns[0]).getDependencies()
         for pC in possibleCommon[::-1]:
+            foundTally = len(ns) - 1
             for i in range(1, len(ns)):
-                foundCommon = False
+                commonFound = False
                 for otherDep in self.getFromNet(ns[i]).getDependencies():
                     if otherDep == pC:
-                        foundCommon = True
-                if not foundCommon:
-                    possibleCommon.remove(pC)
+                        commonFound = True
+                if commonFound:
+                    foundTally -= 1
+            if foundTally != 0:
+                possibleCommon.remove(pC)
         if len(possibleCommon) == 0:
-            raise NotImplementedError("Logic to compute " + args
+            raise NotImplementedError("Logic to compute " + "".join(args)
                     + " does not exist.")
         # Condition on the common dependent and multiply together
         else:

@@ -10,7 +10,6 @@ class PredictiveReasoning(Reasoning):
     def compute(self, subject, conditions):
         sNodes = self.getNodes(subject)
         cNodes = self.getNodes(conditions)
-        # Can only handle one variable right now
         if len(sNodes) == 1:
             s = self.getFromNet(sNodes[0])
             subjDeps = s.getDependencies()
@@ -34,7 +33,7 @@ class PredictiveReasoning(Reasoning):
             return result
         else:
             # Case where there are multiple subjects
-            self.notImplemented(subject + ["|"] + conditions)
+            return self.multipleSubjects(subject, conditions)
 
     # Case where all conditions have some direct dependence to the subject.
     # subject is a node of the single subject, conditions is a list of the
@@ -139,3 +138,45 @@ class PredictiveReasoning(Reasoning):
             return result
         else:
             self.notImplemented(subject + ["|"] + conditions)
+
+    def multipleSubjects(self, subjects, conditions):
+        sNodes = self.getNodes(subjects)
+        cNodes = self.getNodes(conditions)
+
+        # See if the subjects have any common dependencies
+        possibleCommon = self.getFromNet(sNodes[0]).getDependencies()
+        for pC in possibleCommon[::-1]:
+            foundTally = len(sNodes) - 1
+            for i in range(1, len(sNodes)):
+                foundCommon = False
+                for otherDep in self.getFromNet(sNodes[i]).getDependencies():
+                    if pC == otherDep:
+                        foundCommon = True
+                if foundCommon:
+                    foundTally -= 1
+            if foundTally != 0:
+                possibleCommon.remove(pC)
+        # If there are no common dependencies then we do cannot compute
+        if len(possibleCommon) == 0:
+            self.notImplemented(subjects + ["|"] + conditions)
+        # Check to see if the common dependencies are in the conditions
+        commonDep = None
+        for pC in possibleCommon:
+            for i,c in enumerate(cNodes):
+                if pC == c:
+                    commonDep = conditions[i]
+        # If commonDep is already in the conditions we can remove the other
+        # conditions and the subjects become independent
+        if commonDep is not None:
+            result = 1
+            for s in subjects:
+                result *= self.compute([s], [commonDep])
+            return result
+        else:
+            commonDep = possibleCommon[0]
+            result = self.multipleSubjects(subjects, [commonDep.lower()])
+            result *= self.compute([commonDep.lower()], conditions)
+            addToResult = self.multipleSubjects(subjects, ["~"
+                    + commonDep.lower()])
+            addToResult *= self.compute(["~" + commonDep.lower()], conditions)
+            return result + addToResult
