@@ -108,9 +108,12 @@ class BayesNetCalculator(object):
         processedC = self.getNodes(conditions)
         for s in processedS:
             for c in processedC:
-                diagnostic = self.levels[c] > self.levels[s]
-                predictive = self.levels[c] < self.levels[s]
-                intercausal = self.levels[c] >= self.levels[s]
+                if self.levels[c] <= self.levels[s]:
+                    diagnostic = False
+                if self.levels[c] >= self.levels[s]:
+                    predictive = False
+                if self.levels[c] < self.levels[s]:
+                    intercausal = False
         if diagnostic:
             return self.diagnostic.compute(subject, conditions)
         elif predictive:
