@@ -8,4 +8,4 @@ class CombinedReasoning(Reasoning):
         super(CombinedReasoning, self).__init__(net, levels, typeFuncs)
 
     def compute(self, subject, condtions):
-        raise self.NOT_IMPLEMENTED
+        self.notImplemented(subject + ["|"] + condtions)

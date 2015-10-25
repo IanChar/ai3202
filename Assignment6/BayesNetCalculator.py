@@ -6,8 +6,6 @@ from DiagnosticReasoning import DiagnosticReasoning
 from CombinedReasoning import CombinedReasoning
 from IntercausalReasoning import IntercausalReasoning
 
-NOT_IMPLEMENTED = NotImplementedError("Unable to compute the following request")
-
 class BayesNetCalculator(object):
     def __init__(self, net):
         # net is a dictionary of all the nodes
@@ -30,7 +28,7 @@ class BayesNetCalculator(object):
                     command[1], self.execConditional)
         elif (command[0][1:] == 'j'):
             toReturn = self.loopThroughCapitals(
-                    command[1], self.execMarginal)
+                    command[1], self.execJoint)
         elif (command[0][1:] == 'm'):
             toReturn = self.execMarginal(command[1])
         elif (command[0][1:] == 'p'):
@@ -123,7 +121,44 @@ class BayesNetCalculator(object):
             return self.combined.compute(subject, conditions)
 
     def execJoint(self, args):
-        raise NOT_IMPLEMENTED
+        # Check if we should use marginal instead
+        if len(args) == 1:
+            return self.execMarginal(args[0])[0][0]
+        argNames = self.getNodes(args)
+        # cluster the args based on the level which the occur
+        clusteredArgs = []
+        seenLevels = []
+        for i, aN1 in enumerate(argNames):
+            currLevel = self.levels[aN1]
+            if currLevel not in seenLevels:
+                nodesInLevel = [args[i]]
+                for j, aN2 in enumerate(argNames):
+                    if i != j  and self.levels[aN2] == currLevel:
+                        nodesInLevel.append(args[j])
+                seenLevels.append(currLevel)
+                clusteredArgs.append((currLevel, nodesInLevel))
+        # Check if there is only one level present, then we assume independence
+        if len(clusteredArgs) == 1:
+            result = 1
+            for a in clusteredArgs[0][1]:
+                result *= self.execMarginal(a)[0][0]
+            return result
+        else:
+            # Sort clusteredArgs in descending level order
+            clusteredArgs.sort()
+            clusteredArgs = clusteredArgs[::-1]
+            # Make the joint probability into a series of conditionals
+            result = 1
+            for i in range(len(clusteredArgs)):
+                if i == len(clusteredArgs) - 1:
+                    result *= self.execJoint(clusteredArgs[i][1])
+                else:
+                    former = clusteredArgs[i][1]
+                    latter = []
+                    for j in range(i + 1, len(clusteredArgs)):
+                        latter += clusteredArgs[j][1]
+                    result *= self.execConditional(former + ["|"] + latter)
+            return result
 
     def execMarginal(self, command):
         if command.upper() == command:

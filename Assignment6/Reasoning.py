@@ -5,6 +5,9 @@ from Node import PriorNode
 Reasoning is an abstract class for the other reasonings that include helper
 functions. This class is not meant to be initialized.
 '''
+
+NOT_IMPLEMENTED = NotImplementedError("Unable to compute the following request")
+
 class Reasoning(object):
     def __init__(self, net, levels, typeFuncs):
         self.net = net
@@ -12,8 +15,6 @@ class Reasoning(object):
         # Sets a dictionary of string -> compute functions where the possibilities
         # for keys are "marginal", "joint", and "conditional"
         self.typeFuncs = typeFuncs
-        self.NOT_IMPLEMENTED = NotImplementedError(
-                "Unable to compute the following request")
 
     def getFromNet(self, key):
         result = None
@@ -71,3 +72,9 @@ class Reasoning(object):
                 l[i] = n[1:]
             l[i] = l[i].upper()
         return l
+
+    # Alerts that a command cannot be exectued. Command should be a list of args
+    def notImplemented(self, command):
+        msg = "P(" + "".join(command) + ")"
+        raise NotImplementedError("The logic to compute " + msg
+                + " is not available.")

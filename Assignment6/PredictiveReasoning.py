@@ -34,7 +34,7 @@ class PredictiveReasoning(Reasoning):
             return result
         else:
             # Case where there are multiple subjects
-            raise self.NOT_IMPLEMENTED
+            self.notImplemented(subject + ["|"] + conditions)
 
     # Case where all conditions have some direct dependence to the subject.
     # subject is a node of the single subject, conditions is a list of the
@@ -138,4 +138,4 @@ class PredictiveReasoning(Reasoning):
                 result += resultComponent
             return result
         else:
-            raise self.NOT_IMPLEMENTED
+            self.notImplemented(subject + ["|"] + conditions)

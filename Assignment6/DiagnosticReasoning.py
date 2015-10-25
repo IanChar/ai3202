@@ -44,7 +44,7 @@ class DiagnosticReasoning(Reasoning):
             return result
         else:
             # Case where there are multiple subjects
-            raise self.NOT_IMPLEMENTED
+            self.notImplemented(subject + ["|"] + conditions)
 
     def bayes(self, subject, conditions, childChains):
         # Check if the problem can be computed given current implementation
@@ -107,4 +107,4 @@ class DiagnosticReasoning(Reasoning):
                 toDivide = self.typeFuncs['joint'](conditions)[0][0]
             return result / toDivide
         else:
-            raise self.NOT_IMPLEMENTED
+            self.notImplemented(subject + ["|"] + conditions)

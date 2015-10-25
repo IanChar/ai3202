@@ -8,4 +8,4 @@ class IntercausalReasoning(Reasoning):
         super(IntercausalReasoning, self).__init__(net, levels, typeFuncs)
 
     def compute(self, subject, condtions):
-        raise self.NOT_IMPLEMENTED
+        self.notImplemented(subject + ["|"] + conditions)
