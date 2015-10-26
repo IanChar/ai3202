@@ -4,7 +4,7 @@ from Node import PriorNode
 from PredictiveReasoning import PredictiveReasoning
 from DiagnosticReasoning import DiagnosticReasoning
 from CombinedReasoning import CombinedReasoning
-from IntercausalReasoning import IntercausalReasoning
+from IntercausalAndCombinedReasoning import IntercausalAndCombinedReasoning
 
 class BayesNetCalculator(object):
     def __init__(self, net):
@@ -17,7 +17,8 @@ class BayesNetCalculator(object):
         self.predictive = PredictiveReasoning(self.net, self.levels, typeFuncs)
         self.diagnostic = DiagnosticReasoning(self.net, self.levels, typeFuncs)
         self.combined = CombinedReasoning(self.net, self.levels, typeFuncs)
-        self.intercausal = IntercausalReasoning(self.net, self.levels, typeFuncs)
+        self.intercausalAndCombined = IntercausalAndCombinedReasoning(self.net,
+                self.levels, typeFuncs)
 
     # Executes a given command. Commands are expected to be in tuple form.
     # Returns list of tuples where first element is the result and the
@@ -79,9 +80,23 @@ class BayesNetCalculator(object):
         subject = args[:index]
         conditions = args[index + 1:]
 
-        # Check to see if the subject is the same as the condition
-        if subject == conditions:
+        # Check to see if the subject is in the condition. If it is remove it
+        # from the subject list since we know it must be true. If subject is
+        # empty then it must mean all subjects were true.
+        for s in subject:
+            for c in conditions:
+                if s == c:
+                    subject.remove(s)
+        if len(subject) == 0:
             return 1
+        # Check to see if any of the subjects conflict with the conditions
+        for s in subject:
+            prefix = "" if s[:1] == "~" else "~"
+            for c in conditions:
+                if prefix == "~" and c[:1] == "~" and c[1:] == s:
+                    return 0
+                elif prefix == "" and c == s[1:]:
+                    return 0
 
         # Check to see if there is no dependence between subject and condition
         isIndependent = True
@@ -102,8 +117,6 @@ class BayesNetCalculator(object):
         diagnostic = True
         # predictive if condition levels < subject level
         predictive = True
-        # intercausal if condition levels >= subject level
-        intercausal = True
         processedS = self.getNodes(subject)
         processedC = self.getNodes(conditions)
         for s in processedS:
@@ -112,16 +125,12 @@ class BayesNetCalculator(object):
                     diagnostic = False
                 if self.levels[c] >= self.levels[s]:
                     predictive = False
-                if self.levels[c] < self.levels[s]:
-                    intercausal = False
         if diagnostic:
             return self.diagnostic.compute(subject, conditions)
         elif predictive:
             return self.predictive.compute(subject, conditions)
-        elif intercausal:
-            return self.intercausal.compute(subject, conditions)
         else:
-            return self.combined.compute(subject, conditions)
+            return self.intercausalAndCombined.compute(subject, conditions)
 
     def execJoint(self, args):
         # Check if we should use marginal instead

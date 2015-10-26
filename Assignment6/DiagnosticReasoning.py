@@ -78,7 +78,6 @@ class DiagnosticReasoning(Reasoning):
                         # indpendent...
                         for c in conditions:
                             command = [c] + ["|"] + [l]
-                            print command
                             resultComponent *= self.typeFuncs[
                                     'conditional'](command)
                     else:
