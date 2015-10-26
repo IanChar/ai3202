@@ -28,7 +28,7 @@ python Main.py -g "x|D~s"
 
 ## Results
 In order to see all of the probabilities that we had to be able to emulate
-you can either look below or execute...
+you can either look below (looks better if viewed raw) or execute...
 
 ```
 ./RunTableCommands.sh
