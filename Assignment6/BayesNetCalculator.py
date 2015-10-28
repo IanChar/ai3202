@@ -3,7 +3,6 @@ from Node import Node
 from Node import PriorNode
 from PredictiveReasoning import PredictiveReasoning
 from DiagnosticReasoning import DiagnosticReasoning
-from CombinedReasoning import CombinedReasoning
 from IntercausalAndCombinedReasoning import IntercausalAndCombinedReasoning
 
 class BayesNetCalculator(object):
@@ -16,7 +15,6 @@ class BayesNetCalculator(object):
                 'conditional': self.execConditional}
         self.predictive = PredictiveReasoning(self.net, self.levels, typeFuncs)
         self.diagnostic = DiagnosticReasoning(self.net, self.levels, typeFuncs)
-        self.combined = CombinedReasoning(self.net, self.levels, typeFuncs)
         self.intercausalAndCombined = IntercausalAndCombinedReasoning(self.net,
                 self.levels, typeFuncs)
 
