@@ -1,10 +1,34 @@
+NUM_LETTERS = 26
+
 class DataParser(object):
     def __init__(self, filename):
         self.filename = filename
+
+    def computeProbabilities(self):
         # P(E_t | X_t), stored as tuple with (x, e)
-        self.evidenceProbs = {}
+        evidenceProbs = {}
         # P(E_(t+1) | E_t), stored as tuple with (x_t, x_t+1)
-        self.transitionProbs = {}
+        transitionProbs = {}
+        ev, states = self.parseInData()
+        # Fill out evidence
+        for prior, observed in ev.iteritems():
+            for s in range(97, 123):
+                if chr(s) in observed.keys():
+                    seen = observed[chr(s)]
+                else:
+                    seen = 0
+                evidenceProbs[(prior, chr(s))] = (float(seen + 1)
+                        / (observed['count'] + NUM_LETTERS))
+        # Fill out state transitions
+        for prior, observed in states.iteritems():
+            for s in range(97, 123):
+                if chr(s) in observed.keys():
+                    seen = observed[chr(s)]
+                else:
+                    seen = 0
+                transitionProbs[(prior, chr(s))] = (float(seen + 1)
+                        / (observed['count'] + NUM_LETTERS))
+        return evidenceProbs, transitionProbs
 
     def parseInData(self):
         f = open(self.filename, 'r')
@@ -49,5 +73,7 @@ class DataParser(object):
         return tmpEvidence, tmpState
 
 if __name__ == '__main__':
-    dp = DataParser('test.data')
-    dp.parseInData()
+    dp = DataParser('typos20.data')
+    e, s = dp.computeProbabilities()
+    print e[('b', 'b')], e[('b', 'v')]
+    print s[('t', 'h')], s[('t', 'z')]
