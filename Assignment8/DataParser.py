@@ -1,3 +1,4 @@
+import numpy as np
 NUM_LETTERS = 26
 
 class DataParser(object):
@@ -5,10 +6,12 @@ class DataParser(object):
         self.filename = filename
 
     def computeProbabilities(self):
-        # P(E_t | X_t), stored as tuple with (x, e)
-        evidenceProbs = {}
-        # P(E_(t+1) | E_t), stored as tuple with (x_t, x_t+1)
-        transitionProbs = {}
+        # P(E_t | X_t), stored matrix where row is x and column is e
+        evidenceProbs = np.matrix([[0 for _ in range(26)] for __ in range(26)])
+        evidenceProbs = evidenceProbs.astype(float)
+        # P(E_(t+1) | E_t), stored as matrix where row is x_t anc col is x_t+1
+        transitionProbs = np.matrix([[0 for _ in range(26)] for __ in range(26)])
+        transitionProbs = transitionProbs.astype(float)
         ev, states = self.parseInData()
         # Fill out evidence
         for prior, observed in ev.iteritems():
@@ -17,7 +20,7 @@ class DataParser(object):
                     seen = observed[chr(s)]
                 else:
                     seen = 0
-                evidenceProbs[(prior, chr(s))] = (float(seen + 1)
+                evidenceProbs[ord(prior) - 97, s - 97] = (float(seen + 1)
                         / (observed['count'] + NUM_LETTERS))
         # Fill out state transitions
         for prior, observed in states.iteritems():
@@ -26,7 +29,7 @@ class DataParser(object):
                     seen = observed[chr(s)]
                 else:
                     seen = 0
-                transitionProbs[(prior, chr(s))] = (float(seen + 1)
+                transitionProbs[ord(prior) - 97, s - 97] = (float(seen + 1)
                         / (observed['count'] + NUM_LETTERS))
         return evidenceProbs, transitionProbs
 
@@ -75,5 +78,4 @@ class DataParser(object):
 if __name__ == '__main__':
     dp = DataParser('typos20.data')
     e, s = dp.computeProbabilities()
-    print e[('b', 'b')], e[('b', 'v')]
-    print s[('t', 'h')], s[('t', 'z')]
+    print s[ord('q') - 97, ord('u') - 97]
