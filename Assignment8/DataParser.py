@@ -1,6 +1,6 @@
 import numpy as np
-A_ASCII = 97
-Z_ASCII = 122
+A_ASCII = ord('a')
+Z_ASCII = ord('z')
 NUM_STATES = 27
 # Consts for the counter list
 SPACE_INDEX = 26
@@ -127,4 +127,4 @@ class DataParser(object):
 if __name__ == '__main__':
     dp = DataParser('typos20.data')
     e, s, i = dp.computeProbabilities()
-    print i
+    print s
