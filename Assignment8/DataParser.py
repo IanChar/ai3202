@@ -1,64 +1,91 @@
 import numpy as np
-NUM_LETTERS = 26
+A_ASCII = 97
+Z_ASCII = 122
 NUM_STATES = 27
+# Consts for the counter list
+SPACE_INDEX = 26
+COUNT_INDEX = 27
 
 class DataParser(object):
     def __init__(self, filename):
         self.filename = filename
 
     def computeProbabilities(self):
+        ev, states, c = self.parseInData()
         # P(E_t | X_t), stored matrix where row is x and column is e
-        evidenceProbs = np.matrix([[0 for _ in range(27)] for __ in range(27)])
+        evidenceProbs = np.matrix([[0 for _ in range(NUM_STATES)]
+                for __ in range(NUM_STATES)])
         evidenceProbs = evidenceProbs.astype(float)
         # P(E_(t+1) | E_t), stored as matrix where row is x_t anc col is x_t+1
-        transitionProbs = np.matrix([[0 for _ in range(27)] for __ in range(27)])
+        transitionProbs = np.matrix([[0 for _ in range(NUM_STATES)]
+                for __ in range(NUM_STATES)])
         transitionProbs = transitionProbs.astype(float)
-        ev, states = self.parseInData()
+        # Vector for initial states
+        initStateProbs = np.matrix([float(c[i])/c[COUNT_INDEX]
+                for i in range(COUNT_INDEX)])
         # Fill out evidence
         for prior, observed in ev.iteritems():
-            for s in range(97, 123):
-                if chr(s) in observed.keys():
-                    seen = observed[chr(s)]
-                else:
-                    seen = 0
-                evidenceProbs[ord(prior) - 97, s - 97] = (float(seen + 1)
-                        / (observed['count'] + NUM_LETTERS))
-        evidenceProbs[26, 26] = 1
-        # Fill out state transitions
-        for prior, observed in states.iteritems():
-            for s in range(97, 123):
+            for s in range(A_ASCII, Z_ASCII + 1):
                 if chr(s) in observed.keys():
                     seen = observed[chr(s)]
                 else:
                     seen = 0
                 if prior == "_":
-                    transitionProbs[26, s - 97] = (float(seen + 1)
+                    evidenceProbs[SPACE_INDEX, s - A_ASCII] = (float(seen + 1)
                             / (observed['count'] + NUM_STATES))
                 else:
-                    transitionProbs[ord(prior) - 97, s - 97] = (float(seen + 1)
-                            / (observed['count'] + NUM_STATES))
+                    evidenceProbs[ord(prior) - A_ASCII, s - A_ASCII] = (float(
+                            seen + 1) / (observed['count'] + NUM_STATES))
             s = '_'
             if s in observed.keys():
                 seen = observed[s]
             else:
                 seen = 0
             if prior == "_":
-                transitionProbs[26, 26] = (float(seen + 1)
+                evidenceProbs[SPACE_INDEX, SPACE_INDEX] = (float(seen + 1)
                         / (observed['count'] + NUM_STATES))
             else:
-                transitionProbs[ord(prior) - 97, 26] = (float(seen + 1)
+                evidenceProbs[ord(prior) - A_ASCII, SPACE_INDEX] = (float(
+                        seen + 1) / (observed['count'] + NUM_STATES))
+        # Fill out state transitions
+        for prior, observed in states.iteritems():
+            for s in range(A_ASCII, Z_ASCII + 1):
+                if chr(s) in observed.keys():
+                    seen = observed[chr(s)]
+                else:
+                    seen = 0
+                if prior == "_":
+                    transitionProbs[SPACE_INDEX, s - A_ASCII] = (float(seen + 1)
+                            / (observed['count'] + NUM_STATES))
+                else:
+                    transitionProbs[ord(prior) - A_ASCII, s - A_ASCII] = (float(
+                            seen + 1) / (observed['count'] + NUM_STATES))
+            s = '_'
+            if s in observed.keys():
+                seen = observed[s]
+            else:
+                seen = 0
+            if prior == "_":
+                transitionProbs[SPACE_INDEX, SPACE_INDEX] = (float(seen + 1)
                         / (observed['count'] + NUM_STATES))
-        return evidenceProbs, transitionProbs
+            else:
+                transitionProbs[ord(prior) - A_ASCII, SPACE_INDEX] = (float(
+                        seen + 1) / (observed['count'] + NUM_STATES))
+        return evidenceProbs, transitionProbs, initStateProbs
 
     def parseInData(self):
         f = open(self.filename, 'r')
 
         # Count the evidences and state transitions these will be nested dicts.
+        # Also count how many times each state appears index 26 is _ and 27
+        # is total count
         tmpEvidence = {}
         tmpState = {}
-        for i in range(97, 123):
+        tmpCounter = [0 for _ in range(NUM_STATES + 1)]
+        for i in range(A_ASCII, 123):
             tmpEvidence[chr(i)] = {'count' : 0}
             tmpState[chr(i)] = {'count' : 0}
+        tmpEvidence['_'] = {'count' : 0}
         tmpState['_'] = {'count': 0}
 
         # Iterate over the lines of the file
@@ -72,14 +99,13 @@ class DataParser(object):
         # While there are still valid lines in the file
         while len(nxt) == 2:
             nxt[1] = nxt[1][:-1]
-            if curr[0] != '_':
-                # Update evidence
-                e = tmpEvidence[curr[0]]
-                if curr[1] in e.keys():
-                    e[curr[1]] += 1
-                else:
-                    e[curr[1]] = 1
-                e['count'] += 1
+            # Update evidence
+            e = tmpEvidence[curr[0]]
+            if curr[1] in e.keys():
+                e[curr[1]] += 1
+            else:
+                e[curr[1]] = 1
+            e['count'] += 1
             # Update state
             s = tmpState[curr[0]]
             if nxt[0] in s.keys():
@@ -87,16 +113,18 @@ class DataParser(object):
             else:
                 s[nxt[0]] = 1
             s['count'] += 1
+            # update count
+            if ord(curr[0]) >= A_ASCII and ord(curr[0]) <= Z_ASCII:
+                tmpCounter[ord(curr[0]) - A_ASCII] += 1
+            else:
+                tmpCounter[SPACE_INDEX] += 1
+            tmpCounter[COUNT_INDEX] += 1
             curr = nxt
             nxt = f.readline().split(' ')
         f.close()
-        return tmpEvidence, tmpState
+        return tmpEvidence, tmpState, tmpCounter
 
 if __name__ == '__main__':
     dp = DataParser('typos20.data')
-    e, s = dp.computeProbabilities()
-    print s[ord('q') - 97]
-    a = 0
-    for i in s[ord('q') - 97]:
-        a += i
-    print s[ord('q') - 97].cumsum()
+    e, s, i = dp.computeProbabilities()
+    print i

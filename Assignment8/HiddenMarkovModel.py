@@ -6,7 +6,7 @@ A_ASCII = ord('a')
 class HiddenMarkovModel(object):
     def __init__(self, filename):
         dp = DataParser(filename)
-        self.ePtm, self.sPtm = dp.computeProbabilities()
+        self.ePtm, self.sPtm, self.initVect = dp.computeProbabilities()
 
     def getEProb(self, prior, subject):
         if prior == '_':
@@ -30,6 +30,12 @@ class HiddenMarkovModel(object):
             subject = ord(subject) - A_ASCII
         return self.sPtm[prior, subject]
 
+    def getInitProb(self, subject):
+        if subject == '_':
+            return self.initVect[0, 26]
+        else:
+            return self.initVect[0, ord(subject) - A_ASCII]
+
     def printEPtmTable(self):
         for i in range(27):
             if i == 26:
@@ -41,7 +47,8 @@ class HiddenMarkovModel(object):
                     jChar = "_"
                 else:
                     jChar = chr(j + A_ASCII)
-                print "P(", jChar, "|", iChar, ") = ", self.getEProb(iChar, jChar)
+                print "P(", jChar, "|", iChar, ") = ", self.getEProb(
+                        iChar, jChar)
 
     def printSPtmTable(self):
         for i in range(27):
@@ -54,10 +61,18 @@ class HiddenMarkovModel(object):
                     jChar = "_"
                 else:
                     jChar = chr(j + A_ASCII)
-                print "P(", jChar, "|", iChar, ") = ", self.getSProb(iChar, jChar)
+                print "P(", jChar, "|", iChar, ") = ", self.getSProb(
+                        iChar, jChar)
+    def printInitTable(self):
+        for i in range(26):
+            print "P(", chr(i + A_ASCII), ") =", self.getInitProb(chr(
+                    i + A_ASCII))
+        print "P( _ ) =", self.getInitProb('_')
 
 if __name__ == '__main__':
     hmm = HiddenMarkovModel('typos20.data')
+    print "--------------Initial  Probabilties--------------"
+    hmm.printInitTable()
     print "--------------Evidence Probabilties--------------"
     hmm.printEPtmTable()
     print "--------------Transition Probabilties--------------"
