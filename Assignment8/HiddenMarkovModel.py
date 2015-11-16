@@ -83,6 +83,7 @@ class HiddenMarkovModel(object):
             if len(splitted) == 2:
                 trueStates.append(splitted[0])
                 emissions.append(splitted[1][:-1])
+        f.close()
         return trueStates, emissions
 
     def getEProb(self, prior, subject):
