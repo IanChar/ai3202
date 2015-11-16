@@ -16,8 +16,8 @@ class HiddenMarkovModel(object):
         sequence = self.findMostLikelySequence(probs)
         for s in sequence:
             print s
-        print "\nWent from", self.computeAccuracy(self.emissions), "%",
-        print "to", self.computeAccuracy(sequence), "%", "accuracy."
+        print "\nError went from", self.computeAccuracy(self.emissions), "%",
+        print "to", self.computeAccuracy(sequence), "%"
 
     def findMostLikelySequence(self, seqProbs):
         seqProbs = seqProbs[::-1]
@@ -37,7 +37,7 @@ class HiddenMarkovModel(object):
         countCorrect = 0
         for sIndex, s in enumerate(sequence):
             countCorrect += s == self.trueStates[sIndex]
-        return float(countCorrect)/len(self.trueStates) * 100
+        return (1 - float(countCorrect)/len(self.trueStates)) * 100
 
     def findSequenceProbs(self):
         stateProbs = []
