@@ -1,9 +1,10 @@
 # Assignment 8
-## Part 1
-In order to parse typos20.data into a probability table run the follwing command.
+In order to find the most likely sequence of characters in typos20Test.data using
+statistics from typos20.data type the following command.
 
 ```
 python HiddenMarkovModel.py
 ```
 
-Note that for this to run you will need numpy installed.
+Note that for this to run you will need numpy installed. Also it will take a bit
+of time to run...
